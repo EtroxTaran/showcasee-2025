@@ -27,7 +27,7 @@ const OpportunityCard = ({ opportunity }: { opportunity: Opportunity }) => {
                     <CardDescription className="text-xs">{opportunity.customers?.name || 'Unknown Customer'}</CardDescription>
                 </CardHeader>
                 <CardContent className="p-4 pt-2 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/50 rounded-b-xl">
-                    <span className="text-sm font-semibold">{formatCurrency(opportunity.expected_revenue)}</span>
+                    <span className="text-sm font-semibold">{formatCurrency(opportunity.value)}</span>
                     <Badge variant="outline" className="text-[10px] h-5">{opportunity.probability}%</Badge>
                 </CardContent>
             </Card>
@@ -41,7 +41,7 @@ const KanbanColumn = ({ stage, opportunities }: { stage: OpportunityStage, oppor
         id: stage,
     });
 
-    const totalValue = opportunities.reduce((sum, opp) => sum + (opp.expected_revenue || 0), 0);
+    const totalValue = opportunities.reduce((sum, opp) => sum + (opp.value || 0), 0);
 
     return (
         <div className="flex flex-col h-full min-w-[280px] w-full bg-muted/30 rounded-lg p-2 border border-border/50">
@@ -133,7 +133,7 @@ export default function OpportunityBoard({ initialOpportunities }: { initialOppo
                                 <CardDescription className="text-xs">{activeOpportunity.customers?.name}</CardDescription>
                             </CardHeader>
                             <CardContent className="p-4 pt-2 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/50 rounded-b-xl">
-                                <span className="text-sm font-semibold">{formatCurrency(activeOpportunity.expected_revenue)}</span>
+                                <span className="text-sm font-semibold">{formatCurrency(activeOpportunity.value)}</span>
                                 <Badge variant="outline" className="text-[10px] h-5">{activeOpportunity.probability}%</Badge>
                             </CardContent>
                         </Card>
