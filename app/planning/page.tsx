@@ -8,6 +8,7 @@ import { AdvancedMarker, InfoWindow, useMap } from '@vis.gl/react-google-maps';
 import { Customer } from '@/types/customer';
 
 import { MyToursList } from './MyToursList';
+import { ClusteredMarkers } from '@/components/tour-planning/ClusteredMarkers';
 
 export default function PlanningPage() {
     const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -269,19 +270,10 @@ export default function PlanningPage() {
                     >
                         <TourDirections onMetricsUpdate={setRouteMetrics} />
 
-                        {customers.map((customer) => (
-                            <AdvancedMarker
-                                key={customer.id}
-                                position={{ lat: customer.lat!, lng: customer.lng! }}
-                                title={customer.name}
-                                onClick={() => handleMarkerClick(customer)}
-                            >
-                                <div className="text-2xl cursor-pointer hover:scale-110 transition-transform">
-                                    {/* Different icon if already in tour? */}
-                                    {stops.some(s => s.customer?.id === customer.id) ? '✅' : '📍'}
-                                </div>
-                            </AdvancedMarker>
-                        ))}
+                        <ClusteredMarkers
+                            customers={customers}
+                            onMarkerClick={handleMarkerClick}
+                        />
 
                         {/* Info Window for Selected Customer */}
                         {selectedCustomer && (

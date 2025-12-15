@@ -88,47 +88,63 @@ export const useTourStore = create<TourState>((set, get) => ({
                 set({ tourId: currentTourId });
             }
 
-            // 2. Create Tour Day (Assume single day for MVP or manage days)
-            // For MVP we just put all stops in Day 1 unless we have logic to split.
-            // The DB requires tour_days. Let's create one day.
-            // Check if day exists? simpler to delete old days/stops and recreate for full sync if easy.
-            // Or just upsert.
-            // Strategy: Delete existing days/stops for this tour and recreate. (Simplest for MVP sync)
-
             if (currentTourId) {
-                // Delete old structure
+                // Delete old structure (days & stops cascade)
                 await supabase.from('tour_days').delete().eq('tour_id', currentTourId);
 
-                // Create Day 1
-                const { data: dayData, error: dayError } = await supabase.from('tour_days').insert({
-                    tour_id: currentTourId,
-                    day_number: 1,
-                    date: new Date().toISOString().split('T')[0], // Today
-                }).select().single();
+                // Split stops into days
+                // Logic: A 'hotel' stop ends the current day.
+                const daysChunks: TourStop[][] = [];
+                let currentChunk: TourStop[] = [];
 
-                if (dayError) throw dayError;
-                const dayId = dayData.id;
+                stops.forEach(stop => {
+                    currentChunk.push(stop);
+                    if (stop.type === 'hotel') {
+                        daysChunks.push(currentChunk);
+                        currentChunk = [];
+                    }
+                });
+                if (currentChunk.length > 0) {
+                    daysChunks.push(currentChunk);
+                }
 
-                // Create Stops
-                const stopsPayload = stops.map((stop, index) => ({
-                    tour_day_id: dayId,
-                    customer_id: stop.type === 'customer' ? stop.customer?.id : null,
-                    place_id: stop.type === 'hotel' ? stop.hotel?.place_id : null,
-                    type: stop.type,
-                    sequence_order: index,
-                    name: stop.type === 'hotel' ? stop.hotel?.name : stop.customer?.name,
-                    lat: stop.type === 'hotel' ? stop.hotel?.lat : stop.customer?.lat,
-                    lng: stop.type === 'hotel' ? stop.hotel?.lng : stop.customer?.lng,
-                    address: stop.type === 'hotel' ? stop.hotel?.address : stop.customer?.address,
-                }));
+                // Process each day
+                for (let i = 0; i < daysChunks.length; i++) {
+                    const chunk = daysChunks[i];
+                    const dayNumber = i + 1;
 
-                const { error: stopsError } = await supabase.from('tour_stops').insert(stopsPayload);
-                if (stopsError) throw stopsError;
+                    // Create Day
+                    const { data: dayData, error: dayError } = await supabase.from('tour_days').insert({
+                        tour_id: currentTourId,
+                        day_number: dayNumber,
+                        date: new Date().toISOString().split('T')[0], // For MVP, just today. In real app, increment date.
+                    }).select().single();
+
+                    if (dayError) throw dayError;
+                    const dayId = dayData.id;
+
+                    // Create Stops for this day
+                    const stopsPayload = chunk.map((stop, index) => ({
+                        tour_day_id: dayId,
+                        customer_id: stop.type === 'customer' ? stop.customer?.id : null,
+                        place_id: stop.type === 'hotel' ? stop.hotel?.place_id : null,
+                        type: stop.type,
+                        sequence_order: index,
+                        name: stop.type === 'hotel' ? stop.hotel?.name : stop.customer?.name,
+                        lat: stop.type === 'hotel' ? stop.hotel?.lat : stop.customer?.lat,
+                        lng: stop.type === 'hotel' ? stop.hotel?.lng : stop.customer?.lng,
+                        address: stop.type === 'hotel' ? stop.hotel?.address : stop.customer?.address,
+                    }));
+
+                    if (stopsPayload.length > 0) {
+                        const { error: stopsError } = await supabase.from('tour_stops').insert(stopsPayload);
+                        if (stopsError) throw stopsError;
+                    }
+                }
             }
 
         } catch (error) {
             console.error("Error saving tour:", error);
-            // Handle error state?
         } finally {
             set({ isSaving: false });
         }
@@ -161,15 +177,16 @@ export const useTourStore = create<TourState>((set, get) => ({
                 return;
             }
 
-            // 3. Get Stops for first day (MVP)
-            // In future iterate all days.
-            const dayId = days[0].id;
+            // 3. Get Stops for ALL days
+            // We fetch all days, then fetch all stops for those days.
+            const dayIds = days.map((d: any) => d.id);
             const { data: stopsData, error: stopsError } = await supabase
                 .from('tour_stops')
                 .select(`
                     id,
                     type,
                     sequence_order,
+                    tour_day_id,
                     place_id,
                     name,
                     lat,
@@ -188,10 +205,25 @@ export const useTourStore = create<TourState>((set, get) => ({
                         website
                     )
                 `)
-                .eq('tour_day_id', dayId)
-                .order('sequence_order', { ascending: true });
+                .in('tour_day_id', dayIds)
+                .order('tour_day_id', { ascending: true }) // Sort by days first...
+                .order('sequence_order', { ascending: true }); // ...then by sequence
 
             if (stopsError) throw stopsError;
+
+            // Reconstruct single list.
+            // Since we sort by day_id and then sequence, this works IF dayIds are sorted.
+            // But dayIds are UUIDs. We need to map dayId -> dayNumber to sort correctly.
+            // `days` array is ordered by day_number.
+
+            const dayOrderMap = new Map(days.map((d: any) => [d.id, d.day_number]));
+
+            const sortedStopsData = (stopsData || []).sort((a: any, b: any) => {
+                const dayA = dayOrderMap.get(a.tour_day_id) || 0;
+                const dayB = dayOrderMap.get(b.tour_day_id) || 0;
+                if (dayA !== dayB) return dayA - dayB;
+                return a.sequence_order - b.sequence_order;
+            });
 
             // 4. Transform to TourStop
             const transformStop = (stop: any): TourStop => {
@@ -216,7 +248,7 @@ export const useTourStore = create<TourState>((set, get) => ({
                     // Hotel or location
                     return {
                         id: stop.id,
-                        type: stop.type as 'hotel', // Cast to hotel/stop type
+                        type: stop.type as 'hotel',
                         hotel: {
                             name: stop.name || 'Unknown Stop',
                             address: stop.address || '',
@@ -228,7 +260,7 @@ export const useTourStore = create<TourState>((set, get) => ({
                 }
             };
 
-            const loadedStops = stopsData ? stopsData.map(transformStop) : [];
+            const loadedStops = sortedStopsData.map(transformStop);
 
             set({
                 stops: loadedStops,
