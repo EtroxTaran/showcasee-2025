@@ -378,7 +378,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_gf_stats: { Args: never; Returns: Json }
+      get_sales_stats: { Args: never; Returns: Json }
     }
     Enums: {
       customer_category: "A" | "B" | "C" | "PROSPECT"
