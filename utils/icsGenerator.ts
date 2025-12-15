@@ -60,8 +60,8 @@ export const generateTourIcs = async (tour: SavedTour, stops: TourStop[]): Promi
                 location: location,
                 status: 'CONFIRMED',
                 busyStatus: 'BUSY',
-                geo: (stop.type === 'customer' && stop.customer) ? { lat: stop.customer.lat, lon: stop.customer.lng } :
-                    (stop.type === 'hotel' && stop.hotel) ? { lat: stop.hotel.lat, lon: stop.hotel.lng } : undefined
+                geo: (stop.type === 'customer' && stop.customer && stop.customer.lat && stop.customer.lng) ? { lat: stop.customer.lat, lon: stop.customer.lng } :
+                    (stop.type === 'hotel' && stop.hotel && stop.hotel.lat && stop.hotel.lng) ? { lat: stop.hotel.lat, lon: stop.hotel.lng } : undefined
             };
 
             events.push(event);

@@ -1,7 +1,7 @@
 -- Create tours table
 CREATE TABLE public.tours (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('draft', 'finalized', 'completed')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

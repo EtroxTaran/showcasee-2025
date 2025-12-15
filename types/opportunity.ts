@@ -6,22 +6,20 @@ export type Opportunity = Database['public']['Tables']['opportunities']['Row'] &
     } | null;
 };
 
-export type OpportunityStage = Database['public']['Enums']['project_commercial_stage'];
+export type OpportunityStage = Database['public']['Enums']['opportunity_stage'];
 
 export const STAGE_LABELS: Record<OpportunityStage, string> = {
-    Akquise: 'Akquise (Lead)',
-    Angeboten: 'Angebot',
-    Verhandlung: 'Verhandlung',
-    Beauftragt: 'Beauftragt',
-    'In Umsetzung': 'In Umsetzung',
-    Verloren: 'Verloren',
-    Abgebrochen: 'Abgebrochen'
+    lead: 'Lead',
+    offered: 'Offered',
+    negotiation: 'Negotiation',
+    signed: 'Signed',
+    lost: 'Lost',
 };
 
 export const STAGE_ORDER: OpportunityStage[] = [
-    'Akquise',
-    'Angeboten',
-    'Verhandlung',
-    'Beauftragt',
-    'Verloren'
+    'lead',
+    'offered',
+    'negotiation',
+    'signed',
+    'lost'
 ];
