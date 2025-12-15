@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { MainNav } from "@/components/main-nav";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,7 +28,23 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <div className="hidden flex-col md:flex">
+          <div className="border-b">
+            <div className="flex h-16 items-center px-4">
+              {/* Logo or Brand */}
+              <h2 className="text-lg font-semibold tracking-tight mr-6">
+                KOMPASS
+              </h2>
+              <MainNav className="mx-6" />
+              <div className="ml-auto flex items-center space-x-4">
+                {/* UserNav placeholder or standard avatar */}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="p-8">
+          {children}
+        </div>
       </body>
     </html>
   );
