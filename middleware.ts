@@ -54,7 +54,33 @@ export async function middleware(request: NextRequest) {
         }
     )
 
-    await supabase.auth.getUser()
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (request.nextUrl.pathname.startsWith('/admin')) {
+        if (!user) {
+            return NextResponse.redirect(new URL('/login', request.url))
+        }
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+
+        if (profile?.role !== 'ADM') {
+            return NextResponse.redirect(new URL('/', request.url))
+        }
+    }
+
+    if (!user && (
+        request.nextUrl.pathname.startsWith('/planning') ||
+        request.nextUrl.pathname.startsWith('/projects') ||
+        request.nextUrl.pathname.startsWith('/crm')
+    )) {
+        return NextResponse.redirect(new URL('/login', request.url))
+    }
 
     return response
 }
