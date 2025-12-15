@@ -1,7 +1,7 @@
 export type CustomerStatus = 'Clean' | 'Approached' | 'Negotiation' | 'Deal' | 'Lost';
 export type CustomerCategory = 'A' | 'B' | 'C' | 'D' | 'Lead' | 'Partner';
 export type UrgencyLevel = 'Low' | 'Medium' | 'High' | 'Critical';
-export type ContactType = 'Visit' | 'Call' | 'Email' | 'Note';
+export type ContactType = 'visit' | 'call' | 'email' | 'note';
 
 export interface Customer {
     id: string;
@@ -21,7 +21,7 @@ export interface Customer {
     is_new_lead: boolean | null;
     last_call_notes: string | null;
     urgency_level: UrgencyLevel | string | null;
-    pending_actions: Record<string, any> | null;
+    pending_actions: Record<string, unknown> | null;
     status: CustomerStatus | string | null;
     assigned_user_id: string | null;
     billing_address: string | null;
@@ -29,13 +29,11 @@ export interface Customer {
     annual_revenue_target: number | null;
 }
 
-export interface ContactProtocol {
+export interface Interaction {
     id: string;
     customer_id: string;
-    created_by: string | null;
-    contact_type: ContactType | string;
-    summary_html: string | null;
-    created_at: string; // ISO Date string
-    next_action: string | null;
-    next_action_deadline: string | null; // ISO Date string
+    type: ContactType | string;
+    notes: string | null;
+    date: string; // ISO Date string for when the interaction happened
+    created_at: string;
 }

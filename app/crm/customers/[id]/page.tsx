@@ -2,7 +2,8 @@ import { createClient } from "@/utils/supabase/server";
 import { CustomerDetailHeader } from "@/components/customers/customer-detail-header";
 import { CustomerInfoCard } from "@/components/customers/customer-info-card";
 import { InteractionList } from "@/components/customers/interaction-list";
-import { Customer, ContactProtocol } from "@/types/customer";
+import { InteractionForm } from "@/components/customers/interaction-form";
+import { Interaction, Customer } from "@/types/customer";
 import { Separator } from "@/components/ui/separator"
 import { notFound } from "next/navigation"
 
@@ -25,10 +26,14 @@ export default async function CustomerDetailPage({ params }: PageProps) {
     }
 
     const { data: interactions, error: interactionsError } = await supabase
-        .from("contact_protocols")
+        .from("interactions")
         .select("*")
         .eq("customer_id", id)
-        .order("created_at", { ascending: false });
+        .order("date", { ascending: false });
+
+    if (interactionsError) {
+        console.error("Error fetching interactions:", interactionsError);
+    }
 
     return (
         <div className="container mx-auto py-10 space-y-8">
@@ -38,6 +43,11 @@ export default async function CustomerDetailPage({ params }: PageProps) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-8">
                     <CustomerInfoCard customer={customer as Customer} />
+
+                    <div className="grid gap-6">
+                        <InteractionForm customerId={id} />
+                        <InteractionList interactions={(interactions as Interaction[]) || []} />
+                    </div>
 
                     {/* Placeholder for Map Logic - simplified for now */}
                     <div className="h-64 bg-muted rounded-md flex items-center justify-center border">
@@ -50,7 +60,7 @@ export default async function CustomerDetailPage({ params }: PageProps) {
                 </div>
 
                 <div>
-                    <InteractionList interactions={(interactions as ContactProtocol[]) || []} />
+                    {/* Sidebar Area - maybe move interaction list here if it gets long, or keep specific stats here */}
                 </div>
             </div>
         </div>
