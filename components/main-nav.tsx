@@ -23,6 +23,12 @@ export function MainNav({
                 Customers
             </Link>
             <Link
+                href="/crm/opportunities"
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+                Opportunities
+            </Link>
+            <Link
                 href="/planning"
                 className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
             >
